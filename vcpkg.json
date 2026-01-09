@@ -4,6 +4,7 @@
   "description": "ECLIPSE - A daily logic puzzle game",
   "homepage": "https://github.com/MuadhGeorge/ECLIPSE",
   "license": "MIT",
+  "builtin-baseline": "6acb6ae25b2a70437436a3b23e3e9a427fca18a3",
   "dependencies": [
     "raylib",
     "sqlite3",

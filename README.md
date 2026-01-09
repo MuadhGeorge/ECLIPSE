@@ -8,9 +8,13 @@ A production-quality daily logic puzzle game built with modern C++20 and raylib.
 
 ![ECLIPSE Gameplay](assets/gameplay.gif)
 
-##  Try It Now
+## 🎮 Play Online
 
 **[🎮 Play Web Demo](https://muadhgeorge.github.io/ECLIPSE/)**
+
+The game is playable directly in your browser via GitHub Pages! The web version is automatically built and deployed from the main branch using Emscripten.
+
+**Note**: The web build outputs `eclipse_game_web.html` locally, but GitHub Pages serves it as `index.html` at the root URL for easy access.
 
 ## 🎮 Game Rules
 
@@ -170,21 +174,19 @@ source ./emsdk_env.sh  # Linux/macOS
 .\emsdk_env.bat  # Windows
 cd ..
 
-# Set EMSDK environment variable
-export EMSDK="$(pwd)/emsdk"  # Linux/macOS
-# OR
-$env:EMSDK = "$PWD\emsdk"  # Windows
-
 # Build for web
 cd ECLIPSE
-cmake --preset web-release
-cmake --build --preset web-release
+source ../emsdk/emsdk_env.sh  # Re-source for new shell
+emcmake cmake -B build-web -DCMAKE_BUILD_TYPE=Release
+cmake --build build-web --config Release
 
 # Serve locally
-cd build/web-release
+cd build-web
 python3 -m http.server 8000
 # Open browser to: http://localhost:8000/eclipse_game_web.html
 ```
+
+**Note**: GitHub Pages automatically builds and deploys the web version. The workflow copies `eclipse_game_web.html` to `index.html` for easy access at the root URL.
 
 ## 🎮 Controls
 

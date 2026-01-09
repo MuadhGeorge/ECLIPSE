@@ -23,52 +23,54 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Emscripten
-        uses: mymindstorm/setup-emsdk@v14
-        with:
-          version: 'latest'
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Install Dependencies
+      - name: Install Emscripten
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ninja-build
+          git clone https://github.com/emscripten-core/emsdk.git
+          cd emsdk
+          ./emsdk install latest
+          ./emsdk activate latest
+          source ./emsdk_env.sh
+          cd ..
 
-      - name: Configure CMake
+      - name: Build Web Target
         run: |
-          cmake --preset web-release
-        env:
-          EMSDK: ${{ env.EMSDK }}
-
-      - name: Build
-        run: cmake --build --preset web-release
+          source emsdk/emsdk_env.sh
+          emcmake cmake -B build-web -DCMAKE_BUILD_TYPE=Release
+          cmake --build build-web --config Release
 
       - name: Prepare Distribution
         run: |
           mkdir -p dist
-          cp build/web-release/eclipse_game_web.html dist/index.html
-          cp build/web-release/eclipse_game_web.js dist/
-          cp build/web-release/eclipse_game_web.wasm dist/
-          cp build/web-release/eclipse_game_web.data dist/ || true
           
-          # Create a simple landing page if needed
-          cat > dist/README.md << 'EOF'
-          # ECLIPSE Web Demo
+          # Copy HTML as index.html
+          cp build-web/eclipse_game_web.html dist/index.html
           
-          Play the daily puzzle in your browser!
+          # Copy JS and WASM files
+          cp build-web/eclipse_game_web.js dist/
+          cp build-web/eclipse_game_web.wasm dist/
           
-          [Launch Game](index.html)
-          EOF
+          # Copy data file if it exists
+          if [ -f build-web/eclipse_game_web.data ]; then
+            cp build-web/eclipse_game_web.data dist/
+          fi
+          
+          # Prevent Jekyll processing
+          touch dist/.nojekyll
+          
+          # Verify contents
+          echo "Contents of dist/:"
+          ls -la dist/
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
 
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: ./dist
 
   deploy:
-    name: Deploy to Pages
+    name: Deploy to GitHub Pages
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

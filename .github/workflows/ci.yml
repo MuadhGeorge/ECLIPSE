@@ -15,13 +15,6 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        include:
-          - os: ubuntu-latest
-            triplet: x64-linux
-          - os: windows-latest
-            triplet: x64-windows
-          - os: macos-latest
-            triplet: x64-osx
 
     steps:
       - name: Checkout
@@ -39,15 +32,30 @@ jobs:
         if: runner.os == 'Windows'
         run: choco install ninja
 
-      - name: Setup vcpkg
-        uses: lukka/run-vcpkg@v11
-        with:
-          vcpkgGitCommitId: 'c8696863d371ab7f46e213d8f5ca923c4aef2a00'
+      - name: Clone vcpkg
+        run: |
+          git clone https://github.com/Microsoft/vcpkg.git
+          cd vcpkg
+          git checkout 6acb6ae25b2a70437436a3b23e3e9a427fca18a3
+
+      - name: Bootstrap vcpkg (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          cd vcpkg
+          ./bootstrap-vcpkg.sh
+
+      - name: Bootstrap vcpkg (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          cd vcpkg
+          .\bootstrap-vcpkg.bat
+
+      - name: Set VCPKG_ROOT
+        shell: bash
+        run: echo "VCPKG_ROOT=${{ github.workspace }}/vcpkg" >> $GITHUB_ENV
 
       - name: Configure CMake
         run: cmake --preset desktop-release
-        env:
-          VCPKG_ROOT: ${{ github.workspace }}/vcpkg
 
       - name: Build
         run: cmake --build --preset desktop-release
