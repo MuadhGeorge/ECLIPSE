@@ -10,11 +10,11 @@ A production-quality daily logic puzzle game built with modern C++20 and raylib.
 
 ## 🎮 Play Online
 
-**[🎮 Play Web Demo](https://muadhgeorge.github.io/ECLIPSE/)**
+**[🎮 Play on Vercel](https://eclipse-game.vercel.app/)** | **[🎮 Play on GitHub Pages](https://muadhgeorge.github.io/ECLIPSE/)**
 
-The game is playable directly in your browser via GitHub Pages! The web version is automatically built and deployed from the main branch using Emscripten.
+The game is playable directly in your browser! The web version is built using Emscripten and deployed automatically.
 
-**Note**: The web build outputs `eclipse_game_web.html` locally, but GitHub Pages serves it as `index.html` at the root URL for easy access.
+**Note**: The web build outputs `eclipse_game_web.html`, which is renamed to `index.html` for deployment.
 
 ## 🎮 Game Rules
 
@@ -388,6 +388,50 @@ ctest --test-dir build/desktop-release --output-on-failure
 # Or use the test preset
 cmake --build --preset desktop-release --target eclipse_tests
 ./build/desktop-release/eclipse_tests
+```
+
+## 🚀 Deploy to Vercel
+
+Deploy your own instance of ECLIPSE to Vercel:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/MuadhGeorge/ECLIPSE)
+
+### Manual Deployment
+
+1. **Fork/Clone** this repository
+2. **Import to Vercel**: Go to [vercel.com/new](https://vercel.com/new) and import your repo
+3. **Deploy**: Vercel automatically detects the `vercel.json` config and runs the build
+
+### How It Works
+
+The `vercel.json` configuration:
+- Runs `scripts/vercel-build.sh` which installs Emscripten and builds the web target
+- Outputs to `dist/` directory with `index.html` as the entrypoint
+- Serves `.wasm` and `.data` files with correct MIME types
+
+### Local Vercel Testing
+
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Build locally (simulates Vercel build)
+vercel build
+
+# Preview locally
+vercel dev
+```
+
+### Output Structure
+
+After build, `dist/` contains:
+```
+dist/
+├── index.html           # Main entrypoint (renamed from eclipse_game_web.html)
+├── eclipse_game_web.js  # Emscripten glue code
+├── eclipse_game_web.wasm # WebAssembly binary
+├── eclipse_game_web.data # Game data (if present)
+└── assets/              # Game assets
 ```
 
 ## 📄 License
