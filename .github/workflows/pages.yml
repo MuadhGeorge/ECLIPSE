@@ -1,0 +1,81 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build Web Version
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 'latest'
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build
+
+      - name: Configure CMake
+        run: |
+          cmake --preset web-release
+        env:
+          EMSDK: ${{ env.EMSDK }}
+
+      - name: Build
+        run: cmake --build --preset web-release
+
+      - name: Prepare Distribution
+        run: |
+          mkdir -p dist
+          cp build/web-release/eclipse_game_web.html dist/index.html
+          cp build/web-release/eclipse_game_web.js dist/
+          cp build/web-release/eclipse_game_web.wasm dist/
+          cp build/web-release/eclipse_game_web.data dist/ || true
+          
+          # Create a simple landing page if needed
+          cat > dist/README.md << 'EOF'
+          # ECLIPSE Web Demo
+          
+          Play the daily puzzle in your browser!
+          
+          [Launch Game](index.html)
+          EOF
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+  deploy:
+    name: Deploy to Pages
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
