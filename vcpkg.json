@@ -1,0 +1,16 @@
+{
+  "name": "eclipse-puzzle",
+  "version": "1.0.0",
+  "description": "ECLIPSE - A daily logic puzzle game",
+  "homepage": "https://github.com/yourusername/eclipse",
+  "license": "MIT",
+  "dependencies": [
+    "raylib",
+    "sqlite3",
+    {
+      "name": "catch2",
+      "version>=": "3.0.0"
+    }
+  ]
+}
+
