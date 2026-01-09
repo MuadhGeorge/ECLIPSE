@@ -27,8 +27,7 @@ CMakeFiles/
 cmake_install.cmake
 compile_commands.json
 
-# vcpkg
-vcpkg/
+# vcpkg installed packages (not the submodule itself)
 vcpkg_installed/
 
 # OS files

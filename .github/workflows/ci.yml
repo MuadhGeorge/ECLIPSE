@@ -17,8 +17,11 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
 
       - name: Install Ninja (Ubuntu)
         if: runner.os == 'Linux'
@@ -35,26 +38,38 @@ jobs:
       - name: Setup vcpkg
         uses: lukka/run-vcpkg@v11
         with:
-          vcpkgGitCommitId: '6acb6aeab0784e6cc8310f2cd69472872cfaa892'
+          vcpkgDirectory: '${{ github.workspace }}/vcpkg'
 
-      - name: Debug vcpkg setup (Windows)
+      - name: Debug vcpkg (Windows)
         if: runner.os == 'Windows'
+        shell: pwsh
         run: |
-          echo VCPKG_ROOT=%VCPKG_ROOT%
-          "%VCPKG_ROOT%\vcpkg.exe" version
-        shell: cmd
+          Write-Host "=== vcpkg Debug Info ==="
+          Write-Host "VCPKG_ROOT: $env:VCPKG_ROOT"
+          Write-Host ""
+          Write-Host "vcpkg version:"
+          & "${{ github.workspace }}\vcpkg\vcpkg.exe" version
+          Write-Host ""
+          Write-Host "vcpkg list (installed packages):"
+          & "${{ github.workspace }}\vcpkg\vcpkg.exe" list 2>&1 || Write-Host "(no packages installed yet)"
 
-      - name: Debug vcpkg setup (Unix)
+      - name: Debug vcpkg (Unix)
         if: runner.os != 'Windows'
-        run: |
-          echo "VCPKG_ROOT=$VCPKG_ROOT"
-          "$VCPKG_ROOT/vcpkg" version
         shell: bash
+        run: |
+          echo "=== vcpkg Debug Info ==="
+          echo "VCPKG_ROOT: $VCPKG_ROOT"
+          echo ""
+          echo "vcpkg version:"
+          "${{ github.workspace }}/vcpkg/vcpkg" version
+          echo ""
+          echo "vcpkg list (installed packages):"
+          "${{ github.workspace }}/vcpkg/vcpkg" list 2>&1 || echo "(no packages installed yet)"
 
       - name: Configure CMake
         run: cmake --preset desktop-release
         env:
-          VCPKG_ROOT: ${{ env.VCPKG_ROOT }}
+          VCPKG_ROOT: ${{ github.workspace }}/vcpkg
 
       - name: Build
         run: cmake --build --preset desktop-release
