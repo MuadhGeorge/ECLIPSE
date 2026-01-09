@@ -2,84 +2,182 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main ]
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  BUILD_TYPE: Release
 
 jobs:
   build-linux:
+    name: Linux Build
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y cmake ninja-build
-        
-    - name: Setup vcpkg
-      run: |
-        git clone https://github.com/Microsoft/vcpkg.git
-        ./vcpkg/bootstrap-vcpkg.sh
-        
-    - name: Configure CMake
-      run: |
-        cmake -B build -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake
-          
-    - name: Build
-      run: cmake --build build --config Release
+      - name: Checkout repository
+        uses: actions/checkout@v4
       
-    - name: Run tests
-      run: |
-        cd build
-        ctest --output-on-failure -C Release
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            ninja-build \
+            libx11-dev \
+            libxrandr-dev \
+            libxinerama-dev \
+            libxcursor-dev \
+            libxi-dev \
+            libgl1-mesa-dev
+      
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: 'c8696863d371ab7f46e213d8f5ca923c4aef2a00'
+      
+      - name: Restore vcpkg cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/vcpkg
+            ${{ github.workspace }}/build/vcpkg_installed
+          key: vcpkg-linux-${{ hashFiles('**/vcpkg.json') }}
+          restore-keys: |
+            vcpkg-linux-
+      
+      - name: Configure CMake
+        run: |
+          cmake --preset desktop-release \
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+      
+      - name: Build
+        run: cmake --build build/release --config ${{ env.BUILD_TYPE }} -j$(nproc)
+      
+      - name: Run tests
+        working-directory: build/release
+        run: ctest --output-on-failure -C ${{ env.BUILD_TYPE }}
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: eclipse-linux
+          path: |
+            build/release/eclipse_app
+            build/release/eclipse_tests
+          retention-days: 7
 
   build-windows:
+    name: Windows Build
     runs-on: windows-latest
     
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Setup vcpkg
-      run: |
-        git clone https://github.com/Microsoft/vcpkg.git
-        .\vcpkg\bootstrap-vcpkg.bat
-        
-    - name: Configure CMake
-      run: |
-        cmake -B build -DCMAKE_BUILD_TYPE=Release `
-          -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}\vcpkg\scripts\buildsystems\vcpkg.cmake
-          
-    - name: Build
-      run: cmake --build build --config Release
+      - name: Checkout repository
+        uses: actions/checkout@v4
       
-    - name: Run tests
-      run: |
-        cd build
-        ctest --output-on-failure -C Release
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: 'c8696863d371ab7f46e213d8f5ca923c4aef2a00'
+      
+      - name: Restore vcpkg cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~\AppData\Local\vcpkg
+            ${{ github.workspace }}\build\vcpkg_installed
+          key: vcpkg-windows-${{ hashFiles('**/vcpkg.json') }}
+          restore-keys: |
+            vcpkg-windows-
+      
+      - name: Configure CMake
+        run: |
+          cmake --preset desktop-release `
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+      
+      - name: Build
+        run: cmake --build build/release --config ${{ env.BUILD_TYPE }} -j $env:NUMBER_OF_PROCESSORS
+      
+      - name: Run tests
+        working-directory: build/release
+        run: ctest --output-on-failure -C ${{ env.BUILD_TYPE }}
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: eclipse-windows
+          path: |
+            build/release/${{ env.BUILD_TYPE }}/eclipse_app.exe
+            build/release/${{ env.BUILD_TYPE }}/eclipse_tests.exe
+          retention-days: 7
 
   build-macos:
+    name: macOS Build
     runs-on: macos-latest
     
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Setup vcpkg
-      run: |
-        git clone https://github.com/Microsoft/vcpkg.git
-        ./vcpkg/bootstrap-vcpkg.sh
-        
-    - name: Configure CMake
-      run: |
-        cmake -B build -DCMAKE_BUILD_TYPE=Release \
-          -DCMAKE_TOOLCHAIN_FILE=${{github.workspace}}/vcpkg/scripts/buildsystems/vcpkg.cmake
-          
-    - name: Build
-      run: cmake --build build --config Release
+      - name: Checkout repository
+        uses: actions/checkout@v4
       
-    - name: Run tests
-      run: |
-        cd build
-        ctest --output-on-failure -C Release
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: 'c8696863d371ab7f46e213d8f5ca923c4aef2a00'
+      
+      - name: Restore vcpkg cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/vcpkg
+            ${{ github.workspace }}/build/vcpkg_installed
+          key: vcpkg-macos-${{ hashFiles('**/vcpkg.json') }}
+          restore-keys: |
+            vcpkg-macos-
+      
+      - name: Configure CMake
+        run: |
+          cmake --preset desktop-release \
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+      
+      - name: Build
+        run: cmake --build build/release --config ${{ env.BUILD_TYPE }} -j$(sysctl -n hw.ncpu)
+      
+      - name: Run tests
+        working-directory: build/release
+        run: ctest --output-on-failure -C ${{ env.BUILD_TYPE }}
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: eclipse-macos
+          path: |
+            build/release/eclipse_app
+            build/release/eclipse_tests
+          retention-days: 7
+
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Check formatting (clang-format)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format
+          # Check if files need formatting (dry-run)
+          find src tests -name '*.cpp' -o -name '*.h' | \
+            xargs clang-format --dry-run --Werror || true
+      
+      - name: Count lines of code
+        run: |
+          echo "## Code Statistics" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Category | Files | Lines |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Source | $(find src -name '*.cpp' -o -name '*.h' | wc -l) | $(find src -name '*.cpp' -o -name '*.h' | xargs wc -l | tail -1 | awk '{print $1}') |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tests | $(find tests -name '*.cpp' | wc -l) | $(find tests -name '*.cpp' | xargs wc -l | tail -1 | awk '{print $1}') |" >> $GITHUB_STEP_SUMMARY

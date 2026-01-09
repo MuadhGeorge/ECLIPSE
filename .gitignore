@@ -28,6 +28,7 @@ cmake_install.cmake
 compile_commands.json
 
 # vcpkg
+vcpkg/
 vcpkg_installed/
 
 # OS files
