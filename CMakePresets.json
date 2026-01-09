@@ -1,88 +1,91 @@
 {
-  "version": 3,
+  "version": 6,
   "cmakeMinimumRequired": {
     "major": 3,
-    "minor": 20,
+    "minor": 25,
     "patch": 0
   },
   "configurePresets": [
     {
-      "name": "vcpkg-base",
+      "name": "default",
       "hidden": true,
+      "generator": "Ninja",
       "cacheVariables": {
-        "CMAKE_TOOLCHAIN_FILE": {
-          "type": "FILEPATH",
-          "value": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
-        }
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      },
+      "condition": {
+        "type": "notEquals",
+        "lhs": "$env{VCPKG_ROOT}",
+        "rhs": ""
+      }
+    },
+    {
+      "name": "vcpkg",
+      "hidden": true,
+      "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+    },
+    {
+      "name": "desktop-debug",
+      "displayName": "Desktop Debug",
+      "description": "Debug build with symbols",
+      "inherits": ["default", "vcpkg"],
+      "binaryDir": "${sourceDir}/build/desktop-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
       }
     },
     {
       "name": "desktop-release",
       "displayName": "Desktop Release",
-      "description": "Release build for desktop (Windows/Linux/macOS)",
-      "inherits": "vcpkg-base",
-      "binaryDir": "${sourceDir}/build/release",
+      "description": "Optimized release build",
+      "inherits": ["default", "vcpkg"],
+      "binaryDir": "${sourceDir}/build/desktop-release",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
-      }
-    },
-    {
-      "name": "desktop-debug",
-      "displayName": "Desktop Debug",
-      "description": "Debug build with symbols for development",
-      "inherits": "vcpkg-base",
-      "binaryDir": "${sourceDir}/build/debug",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+        "CMAKE_BUILD_TYPE": "Release"
       }
     },
     {
       "name": "web-release",
       "displayName": "Web Release (Emscripten)",
-      "description": "WebAssembly build using Emscripten",
-      "binaryDir": "${sourceDir}/build/web",
+      "description": "WebAssembly build",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/web-release",
       "toolchainFile": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "PLATFORM_WEB": "ON"
+      },
+      "condition": {
+        "type": "notEquals",
+        "lhs": "$env{EMSDK}",
+        "rhs": ""
       }
     }
   ],
   "buildPresets": [
     {
-      "name": "desktop-release",
-      "configurePreset": "desktop-release",
-      "configuration": "Release"
+      "name": "desktop-debug",
+      "configurePreset": "desktop-debug"
     },
     {
-      "name": "desktop-debug",
-      "configurePreset": "desktop-debug",
-      "configuration": "Debug"
+      "name": "desktop-release",
+      "configurePreset": "desktop-release"
     },
     {
       "name": "web-release",
-      "configurePreset": "web-release",
-      "configuration": "Release"
+      "configurePreset": "web-release"
     }
   ],
   "testPresets": [
     {
-      "name": "desktop-release",
-      "configurePreset": "desktop-release",
-      "configuration": "Release",
-      "output": {
-        "outputOnFailure": true
-      }
-    },
-    {
       "name": "desktop-debug",
       "configurePreset": "desktop-debug",
-      "configuration": "Debug",
-      "output": {
-        "outputOnFailure": true
-      }
+      "output": {"outputOnFailure": true}
+    },
+    {
+      "name": "desktop-release",
+      "configurePreset": "desktop-release",
+      "output": {"outputOnFailure": true}
     }
   ]
 }

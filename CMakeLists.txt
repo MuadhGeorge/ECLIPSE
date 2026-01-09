@@ -50,7 +50,7 @@ endif()
 
 # Desktop application
 if(PLATFORM_DESKTOP)
-    add_executable(eclipse_app
+    add_executable(eclipse_game
         src/app/main.cpp
         src/app/ui.cpp
         src/app/ui.h
@@ -60,16 +60,16 @@ if(PLATFORM_DESKTOP)
         src/app/persistence.h
     )
 
-    target_link_libraries(eclipse_app PRIVATE 
+    target_link_libraries(eclipse_game PRIVATE 
         eclipse_core
         raylib
         SQLite::SQLite3
     )
 
     # Copy assets
-    add_custom_command(TARGET eclipse_app POST_BUILD
+    add_custom_command(TARGET eclipse_game POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_SOURCE_DIR}/assets $<TARGET_FILE_DIR:eclipse_app>/assets
+        ${CMAKE_SOURCE_DIR}/assets $<TARGET_FILE_DIR:eclipse_game>/assets
     )
 
     # Tests
@@ -91,7 +91,7 @@ endif()
 
 # Web build
 if(PLATFORM_WEB)
-    add_executable(eclipse_web
+    add_executable(eclipse_game_web
         src/app/main.cpp
         src/app/ui.cpp
         src/app/ui.h
@@ -101,16 +101,16 @@ if(PLATFORM_WEB)
         src/app/persistence.h
     )
 
-    target_link_libraries(eclipse_web PRIVATE eclipse_core)
+    target_link_libraries(eclipse_game_web PRIVATE eclipse_core)
 
     # Emscripten settings
-    set_target_properties(eclipse_web PROPERTIES
+    set_target_properties(eclipse_game_web PROPERTIES
         SUFFIX ".html"
         LINK_FLAGS "-s USE_GLFW=3 -s ASSERTIONS=1 -s WASM=1 -s ASYNCIFY -s ALLOW_MEMORY_GROWTH=1 --preload-file ${CMAKE_SOURCE_DIR}/assets@assets"
     )
 
     # Find raylib for web
-    target_include_directories(eclipse_web PRIVATE ${RAYLIB_INCLUDE_DIRS})
-    target_link_libraries(eclipse_web PRIVATE raylib)
+    target_include_directories(eclipse_game_web PRIVATE ${RAYLIB_INCLUDE_DIRS})
+    target_link_libraries(eclipse_game_web PRIVATE raylib)
 endif()
 
