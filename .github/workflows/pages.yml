@@ -29,8 +29,6 @@ jobs:
           cd emsdk
           ./emsdk install latest
           ./emsdk activate latest
-          source ./emsdk_env.sh
-          cd ..
 
       - name: Build Web Target
         run: |
@@ -56,6 +54,39 @@ jobs:
           
           # Prevent Jekyll processing
           touch dist/.nojekyll
+          
+          # Fix paths for GitHub Pages - inject base path handling
+          cat > dist/fix-paths.js << 'EOF'
+// Fix asset paths for GitHub Pages (repo is served under /ECLIPSE/)
+(function() {
+  // Wait for Module to be defined by Emscripten
+  var checkModule = setInterval(function() {
+    if (typeof Module !== 'undefined') {
+      clearInterval(checkModule);
+      
+      // Set the correct paths for WebAssembly and data files
+      var basePath = window.location.pathname.replace(/\/[^\/]*$/, '/');
+      if (!basePath.endsWith('/')) basePath += '/';
+      
+      // Override locateFile to use the correct base path
+      var originalLocateFile = Module.locateFile;
+      Module.locateFile = function(path) {
+        if (originalLocateFile) {
+          return originalLocateFile(path);
+        }
+        // For GitHub Pages, ensure we use relative paths correctly
+        if (path.indexOf('://') === -1) {
+          return basePath + path;
+        }
+        return path;
+      };
+    }
+  }, 10);
+})();
+EOF
+          
+          # Inject the path fix script into index.html (before the main JS)
+          sed -i '/<script async type="text\/javascript" src="eclipse_game_web.js"><\/script>/i \    <script src="fix-paths.js"><\/script>' dist/index.html
           
           # Verify contents
           echo "Contents of dist/:"

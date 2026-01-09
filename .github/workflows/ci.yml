@@ -32,30 +32,29 @@ jobs:
         if: runner.os == 'Windows'
         run: choco install ninja
 
-      - name: Clone vcpkg
-        run: |
-          git clone https://github.com/Microsoft/vcpkg.git
-          cd vcpkg
-          git checkout 6acb6ae25b2a70437436a3b23e3e9a427fca18a3
+      - name: Setup vcpkg
+        uses: lukka/run-vcpkg@v11
+        with:
+          vcpkgGitCommitId: '6acb6aeab0784e6cc8310f2cd69472872cfaa892'
 
-      - name: Bootstrap vcpkg (Unix)
-        if: runner.os != 'Windows'
-        run: |
-          cd vcpkg
-          ./bootstrap-vcpkg.sh
-
-      - name: Bootstrap vcpkg (Windows)
+      - name: Debug vcpkg setup (Windows)
         if: runner.os == 'Windows'
         run: |
-          cd vcpkg
-          .\bootstrap-vcpkg.bat
+          echo VCPKG_ROOT=%VCPKG_ROOT%
+          "%VCPKG_ROOT%\vcpkg.exe" version
+        shell: cmd
 
-      - name: Set VCPKG_ROOT
+      - name: Debug vcpkg setup (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          echo "VCPKG_ROOT=$VCPKG_ROOT"
+          "$VCPKG_ROOT/vcpkg" version
         shell: bash
-        run: echo "VCPKG_ROOT=${{ github.workspace }}/vcpkg" >> $GITHUB_ENV
 
       - name: Configure CMake
         run: cmake --preset desktop-release
+        env:
+          VCPKG_ROOT: ${{ env.VCPKG_ROOT }}
 
       - name: Build
         run: cmake --build --preset desktop-release
