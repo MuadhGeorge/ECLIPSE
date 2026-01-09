@@ -7,10 +7,7 @@
   "dependencies": [
     "raylib",
     "sqlite3",
-    {
-      "name": "catch2",
-      "version>=": "3.0.0"
-    }
+    "catch2"
   ]
 }
 
